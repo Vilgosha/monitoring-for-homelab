@@ -9,7 +9,7 @@ scrape_configs:
   - job_name: 'caddy'
     metrics_path: /metrics
     static_configs:
-      - targets: ['encryption-caddy-1:2019']
+      - targets: ['caddy:2019']
 
   - job_name: 'cadvisor'
     static_configs:
@@ -18,3 +18,4 @@ scrape_configs:
   - job_name: 'node'
     static_configs:
       - targets: ['node-exporter:9100']
+
