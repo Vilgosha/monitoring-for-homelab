@@ -58,4 +58,5 @@ Monitoring was setup on Ubuntu server 25.04.
 
 12) Setup Alerts
 
-#### NB! JSON model file is copy of current working dashboard.
+#### NB! JSON model file -  is a config copy of current working Dashboard.
+#### NB! Export Admins rules file - is a config copy of current working Alerts.
