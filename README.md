@@ -58,3 +58,4 @@ Monitoring was setup on Ubuntu server 25.04.
 
 12) Setup Alerts
 
+#### NB! JSON model file is copy of current working dashboard.
