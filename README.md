@@ -1,33 +1,34 @@
 # Monitoring for homelab
 
-Monitoring was setup on Ubuntu server 25.04.
+	Monitoring was setup on Ubuntu server 25.04.
 
 1) Create directory:
 
-mkdir monitoring
+			mkdir monitoring
 
 2) Place there 3 files:
    
-	docker-compose.yml
+		docker-compose.yml
 	
-  prometheus.yml
+  		prometheus.yml
 	
-  grafana.ini
+  		grafana.ini
 
 4) In grafana.ini put your own information.
-In my case I used gmail for alerts.
+   
+	In my case I used gmail for alerts.
 
-user = example@gmail.com
+	#### Do not use your main email address!
 
-Do not use your main email address!
+	#### I would recommend to use App password from google!
 
-I would recommend to use App password from google!
+	#### Password must be without spaces!
 
-Password must be without spaces!
+	user = example@gmail.com
 
-password = App_password
+	password = App_password
 
-from_name = example@gmail.com
+	from_name = example@gmail.com
 
 4) Check prometheus.yml if any changes required for your setup.
 
@@ -38,12 +39,22 @@ from_name = example@gmail.com
 	docker compose up -d 
 
 7) Open in browser localhost:3535 you should see there login into Grafana
+   
 	user: admin
+	
 	password: (see step 5) 
 
-8) Try dashboard 893 for docker container.
+9) Try dashboard 893 for docker container.
 
-9) Setup dashboards for CPU & RAM usage in Grafana.
+10) Setup dashboards for CPU & RAM usage in Grafana.
 
-10) Setup Alerts.
+	Code for RAM % usage
+
+			(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+
+	Code for CPU % usage
+
+			100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+12) Setup Alerts
 
