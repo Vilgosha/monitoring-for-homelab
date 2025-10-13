@@ -1,6 +1,6 @@
 # Monitoring for homelab
 
-	Monitoring was setup on Ubuntu server 25.04.
+Monitoring was setup on Ubuntu server 25.04.
 
 1) Create directory:
 
