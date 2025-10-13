@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s # Frequency of metric scraping
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+
+  - job_name: 'caddy'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['encryption-caddy-1:2019']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
