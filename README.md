@@ -59,7 +59,7 @@ Monitoring was setup on Ubuntu server 25.04.
 
 8) Start yourn own monitoring system:
 
-	docker compose up -d 
+		docker compose up -d 
 
 9) Open in browser localhost:3535 you should see there login into Grafana
    
