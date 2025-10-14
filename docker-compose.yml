@@ -6,8 +6,13 @@ services:
     container_name: prometheus
     ports:
       - 9090
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=90d
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - /mnt/data_storage/prometheus_data:/prometheus
     networks:
       - monitoring
     restart: unless-stopped
@@ -18,7 +23,7 @@ services:
     ports:
       - "3535:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=password
+      - GF_SECURITY_ADMIN_PASSWORD=grafana9922
     volumes:
       - ./grafana.ini:/etc/grafana/grafana.ini:ro
       - grafana-storage:/var/lib/grafana
