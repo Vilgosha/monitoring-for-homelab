@@ -1,85 +1,85 @@
-# Monitoring for homelab
+# monitoring-for-homelab
 
-Monitoring was setup on Ubuntu server 25.04.
+Docker Compose monitoring stack for a homelab running Ubuntu. Prometheus scrapes metrics from the host, Docker containers, and Caddy — Grafana visualizes everything and sends email alerts via Gmail.
 
-1) Create directory:
+## Stack
 
-			mkdir monitoring
+| Service | Image | Purpose |
+|---|---|---|
+| Prometheus | `prom/prometheus:v2.52.0` | Metrics collection, 90-day retention |
+| Grafana | `grafana/grafana:10.2.2` | Dashboards & alerts |
+| cAdvisor | `gcr.io/cadvisor/cadvisor:v0.47.2` | Docker container metrics |
+| node-exporter | `prom/node-exporter:latest` | Host CPU, RAM, disk metrics |
 
-2) Place there 3 files:
-   
-		docker-compose.yml
-	
-  		prometheus.yml
-	
-  		grafana.ini
+Prometheus also scrapes Caddy (`caddy:2019/metrics`) if you're running it on the same `monitoring` network.
 
-4) In grafana.ini put your own information.
-   
-	In my case I used gmail for alerts.
+## Setup
 
-	#### Do not use your main email address!
+**1. Create the external Docker network** (shared with other services on the host)
 
-	#### I would recommend to use App password from google!
+```bash
+docker network create monitoring
+```
 
-	#### Password must be without spaces!
+**2. Create the metrics storage directory**
 
-	user = example@gmail.com
+```bash
+mkdir -p /mnt/data_storage/prometheus_data
+```
 
-	password = App_password
+Fix permissions for Prometheus (runs as UID 65534):
 
-	from_name = example@gmail.com
+```bash
+sudo chown -R 65534:65534 /mnt/data_storage/prometheus_data
+```
 
-4) Check prometheus.yml if any changes required for your setup.
+**3. Configure Grafana alerts** — edit `grafana.ini` and fill in your Gmail details. Use an [App Password](https://myaccount.google.com/apppasswords), not your main password. The password must have no spaces.
 
-5) Change in docker-compose.yml GF_SECURITY_ADMIN_PASSWORD
+```ini
+user = you@gmail.com
+password = yourapppassword
+from_address = you@gmail.com
+```
 
-6) Add path for metric storage. (Example: /mnt/data_storage/prometheus_data) 
+**4. Set Grafana admin password** — change `GF_SECURITY_ADMIN_PASSWORD` in `docker-compose.yml`.
 
-		mkdir /mnt/data_storage/prometheus_data
-	
-	6.1) If container always restarts and container logs shows this:
+> ⚠️ Hardcoding credentials in `docker-compose.yml` is not ideal. Better options include using a `.env` file (excluded from git) or Docker secrets with the `GF_SECURITY_ADMIN_PASSWORD__FILE` approach.
 
-		goroutine 1 [running]: github.com/prometheus/prometheus/promql.NewActiveQueryTracker({0x7fff383bff57, 0xb}, 0x14, {0x44aa9e0, 0xc00062de50}) 
-		/app/promql/query_logger.go:123 +0x425 main.main() /app/cmd/prometheus/main.go:748 +0x82fe ts=2025-10-14T07:26:40.389Z caller=main.go:617 level=info msg="Starting 				Prometheus Server" mode=server version="(version=2.52.0, branch=HEAD, 
-		revision=879d80922a227c37df502e7315fad8ceb10a986d)" ts=2025-10-14T07:26:40.389Z caller=main.go:622 level=info build_context="(go=go1.22.3, platform=linux/amd64, 				user=root@1b4f4c206e41, date=20240508-21:56:43, tags=netgo,builtinassets,stringlabels)" ts=2025-10-14T07:26:40.389Z caller=main.go:623 level=info host_details="(Linux 			6.14.0-33-generic #33-Ubuntu SMP PREEMPT_DYNAMIC Wed Sep 17 23:22:02 UTC 2025 x86_64 fe95d0a3264c (none))" ts=2025-10-14T07:26:40.389Z caller=main.go:624 level=info 			fd_limits="(soft=1073741816, hard=1073741816)" ts=2025-10-14T07:26:40.390Z caller=main.go:625 level=info vm_limits="(soft=unlimited, hard=unlimited)" ts=202	
-		5-10-14T07:26:40.391Z caller=query_logger.go:93 level=error component=activeQueryTracker msg="Error opening query log file" file=/prometheus/queries.active err="open 			/prometheus/queries.active: permission denied" panic: Unable to create mmap-ed active query log
+**5. Start everything**
 
-   Solution is to give ownership to the container's Prometheus user (UID 65534):
-   
-		sudo chown -R 65534:65534 /mnt/data_storage/prometheus_data
-	
-		sudo chown -R 65534:65534 /mnt/data_storage/prometheus_data/prometheus
+```bash
+docker compose up -d
+```
 
-	Then:
+Open `localhost:3535` → login with `admin` / your password.
 
-		docker compose down
+## Dashboards
 
-		docker compose up -d
+For Docker container metrics, import dashboard ID **893** from Grafana's dashboard library.
 
-8) Start yourn own monitoring system:
+For custom panels, here are the PromQL queries I use:
 
-		docker compose up -d 
+```promql
+# RAM usage %
+(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
 
-9) Open in browser localhost:3535 you should see there login into Grafana
-   
-	user: admin
-	
-	password: (see step 5) 
+# CPU usage %
+100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+```
 
-10) Try dashboard 893 for docker container.
+## Files in this repo
 
-11) Setup dashboards for CPU & RAM usage in Grafana.
+- `docker-compose.yml` — full stack definition
+- `prometheus.yml` — scrape config for all targets
+- `grafana.ini` — SMTP config for email alerts
+- `JSON model` — export of the working Grafana dashboard
+- `Export Admins rules` — export of the working alert rules
 
-	Code for RAM % usage
+## Troubleshooting
 
-			(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+**Prometheus keeps restarting with `permission denied` on queries.active**
 
-	Code for CPU % usage
-
-			100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
-
-12) Setup Alerts
-
-#### NB! JSON model file -  is a config copy of current working Dashboard.
-#### NB! Export Admins rules file - is a config copy of current working Alerts.
+```bash
+sudo chown -R 65534:65534 /mnt/data_storage/prometheus_data
+docker compose down && docker compose up -d
+```
