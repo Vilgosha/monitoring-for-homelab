@@ -23,7 +23,7 @@ services:
     ports:
       - "3535:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=grafana9922
+      - GF_SECURITY_ADMIN_PASSWORD=passw0rd
     volumes:
       - ./grafana.ini:/etc/grafana/grafana.ini:ro
       - grafana-storage:/var/lib/grafana
@@ -71,3 +71,4 @@ volumes:
 networks:
   monitoring:
     external: true
+
